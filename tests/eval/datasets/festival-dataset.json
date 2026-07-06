@@ -1,0 +1,32 @@
+{
+  "eval_cases": [
+    {
+      "eval_case_id": "add_to_watchlist",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "Add 'A Useful Ghost' to my watchlist"}]
+      }
+    },
+    {
+      "eval_case_id": "match_watchlist_schedules",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "Check if there are any screening showtimes for movies on my watchlist"}]
+      }
+    },
+    {
+      "eval_case_id": "query_tiff_competition",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "Show me the films in the Competition category at TIFF 2026"}]
+      }
+    },
+    {
+      "eval_case_id": "check_cinema_victoria",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "What is playing at Cinema Victoria?"}]
+      }
+    }
+  ]
+}

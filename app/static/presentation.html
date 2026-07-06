@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FestivalTbc: Silent Film Presentation</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,500;0,700;1,400&display=swap"
+        rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Style -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #050505;
+            color: #f5eed3;
+            font-family: 'Playfair Display', serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* flickering film grain filter overlay */
+        .film-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.04));
+            z-index: 10;
+            background-size: 100% 3px, 4px 100%;
+            pointer-events: none;
+        }
+
+        .film-overlay::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.01);
+            opacity: 0;
+            animation: light-flicker 0.15s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes light-flicker {
+            0% {
+                opacity: 0.01;
+            }
+
+            50% {
+                opacity: 0.04;
+            }
+
+            100% {
+                opacity: 0.02;
+            }
+        }
+
+        /* Slide Container */
+        .slide-container {
+            width: 85%;
+            max-width: 960px;
+            aspect-ratio: 16 / 9;
+            background-color: #0b0b0b;
+            border: 12px double #e5c158;
+            /* Gold ornate border */
+            padding: 50px 70px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9), inset 0 0 100px rgba(0, 0, 0, 0.95);
+            animation: border-shake 0.3s infinite;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+
+        @keyframes border-shake {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            25% {
+                transform: translate(0.5px, -0.5px) scale(0.999);
+            }
+
+            50% {
+                transform: translate(-0.5px, 0.5px) scale(1.001);
+            }
+
+            75% {
+                transform: translate(0.5px, 0.5px) scale(1);
+            }
+
+            100% {
+                transform: translate(-0.5px, -0.5px) scale(0.999);
+            }
+        }
+
+        .slide {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .slide.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        h2 {
+            font-size: 2.8rem;
+            color: #e5c158;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            line-height: 1.2;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.8);
+        }
+
+        p {
+            font-size: 1.5rem;
+            color: #f5eed3;
+            line-height: 1.7;
+            margin-bottom: 15px;
+            max-width: 800px;
+        }
+
+        strong {
+            color: #e5c158;
+            font-weight: 700;
+        }
+
+        .italic-note {
+            font-size: 1.25rem;
+            color: #fbbf24;
+            font-style: italic;
+            margin-top: 25px;
+        }
+
+        .btn-launch {
+            display: inline-block;
+            margin-top: 20px;
+            background: transparent;
+            color: #e5c158;
+            border: 2px solid #e5c158;
+            padding: 10px 30px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.1rem;
+            border-radius: 4px;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(229, 193, 88, 0.1);
+        }
+
+        .btn-launch:hover {
+            background: #e5c158;
+            color: #0b0b0b;
+            box-shadow: 0 4px 25px rgba(229, 193, 88, 0.4);
+            transform: scale(1.05);
+        }
+
+        /* Arta Cinema Cinema screen simulation */
+        .cinema-screen-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 15px;
+        }
+
+        .cinema-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+            border: 3px double #e5c158;
+        }
+
+        /* Placing mock screen contents over Arta cinema screen */
+        .screen-overlay {
+            position: absolute;
+            top: 18%;
+            left: 21%;
+            width: 57%;
+            height: 48%;
+            background-color: rgba(10, 10, 10, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #f5eed3;
+            font-family: 'Playfair Display', serif;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+            transform: perspective(400px) rotateX(1deg);
+        }
+
+        .screen-overlay h3 {
+            font-size: 1.4rem;
+            color: #e5c158;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        .screen-overlay p {
+            font-size: 0.8rem;
+            margin-bottom: 0;
+            color: #a8a088;
+        }
+
+        /* Controls UI overlay */
+        .controls-overlay {
+            position: absolute;
+            bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            font-family: 'Outfit', sans-serif;
+            z-index: 15;
+        }
+
+        .navigation-keys {
+            display: none;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: 1px solid rgba(229, 193, 88, 0.4);
+            color: #e5c158;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            border-color: #e5c158;
+            background: rgba(229, 193, 88, 0.1);
+        }
+
+        .nav-btn:disabled {
+            border-color: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.05);
+            cursor: not-allowed;
+        }
+
+        .slide-dots {
+            display: flex;
+            gap: 10px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: rgba(229, 193, 88, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            background-color: #e5c158;
+            transform: scale(1.3);
+        }
+
+        .helper-text {
+            color: #888068;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="film-overlay"></div>
+
+    <div class="slide-container" id="deck-container">
+        <!-- Slide 1: Welcome -->
+        <div class="slide active">
+            <h2>Festival</h2>
+            <h2>To be continued...</h2>
+            <div style="font-size: 3.5rem; margin: 15px 0;">🎥 🎬</div>
+            <p class="italic-note">In the style of 1920s silent cinema,<br>this presentation unfolds without sound (for
+                personal reasons).</p>
+        </div>
+
+        <!-- Slide 2: TIFF Intro -->
+        <div class="slide" style="align-items: flex-start; justify-content: flex-start; text-align: left; padding: 75px 60px 40px 60px;">
+            <div style="display: flex; align-items: center; margin-bottom: 25px; gap: 20px;">
+                <img src="images/tiff-logo-clean.svg" style="height: 40px;" alt="TIFF Logo">
+                <h2 style="margin-bottom: 0; line-height: 1.15; font-size: 2.5rem;">Transilvania<br>International<br>Film<br>Festival <span style="color: #ffffff; font-weight: 300; font-size: 1.8rem; margin-left: 8px; vertical-align: 4px;">(Cluj-Napoca)</span></h2>
+            </div>
+            <p style="font-size: 1.7rem; line-height: 1.8; color: #f5eed3; margin-bottom: 25px;">
+                One of the most prominent cultural events in Central and Eastern Europe.
+            </p>
+        </div>
+
+        <!-- Slide 3: TIFF.25 Details -->
+        <div class="slide" style="align-items: flex-start; justify-content: flex-start; text-align: left; padding: 60px 60px 40px 60px;">
+            <div style="display: flex; align-items: center; margin-bottom: 20px; gap: 20px;">
+                <img src="images/tiff-logo-clean.svg" style="height: 40px;" alt="TIFF Logo">
+                <h2 style="margin-bottom: 0; font-size: 2.2rem; white-space: nowrap;"><span style="color: #ffffff;">25th</span> anniversary edition</h2>
+            </div>
+            <p style="font-size: 1.5rem; margin-bottom: 8px;">⏱️ <strong>10 days</strong> of screenings</p>
+            <p style="font-size: 1.5rem; margin-bottom: 8px;">👥 <span style="color: #ffffff;"><strong>130,000 participants</strong></span></p>
+            <p style="font-size: 1.5rem; margin-bottom: 8px;">🎬 <strong>210 films</strong> (172 feature films, 38 shorts)</p>
+            <div style="text-align: center; width: 100%; margin-top: 15px;">
+                <a href="https://tiff.ro/en" target="_blank" class="btn-launch" style="padding: 8px 16px; font-size: 1.1rem; display: inline-flex; align-items: center; gap: 8px; justify-content: center; width: fit-content; margin-left: auto; margin-right: auto;">
+                    Launch TIFF Site
+                    <svg viewBox="0 0 970 770" style="height: 16px; width: auto; fill: #e8210b;" alt="TIFF Logo">
+                        <path d="M417.95,761.82l349.49-349.44v349.44h-349.49ZM767.69,6.48v188.62L956.24,6.48h-188.55ZM578.97,195.09V6.48h-188.5v188.62h-188.89V6.48H13.02v188.62h188.21v566.72L768.06,195.09h-189.09Z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+
+        <!-- Slide 4: TIFF.25 & Festival:tbc -->
+        <div class="slide" style="align-items: flex-start; justify-content: flex-start; text-align: left; padding: 65px 60px 40px 60px;">
+            <div style="display: flex; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
+                <img src="images/tiff-logo-clean.svg" style="height: 40px;" alt="TIFF Logo">
+                <h2 style="margin-bottom: 0; margin-right: 10px;">&amp;</h2>
+                <span style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 2.2rem; color: #f3f4f6; text-transform: none; letter-spacing: -0.5px;">Festival<span style="color: #fbbf24; font-weight: 300;">:tbc</span></span>
+            </div>
+            <p style="font-size: 1.5rem; margin-bottom: 12px; font-style: normal; font-weight: 500; color: #ffffff; margin-top: 5px;">
+                <span style="color: #fbbf24;">210 films</span>, yet many films go unseen
+            </p>
+            <h3 style="font-size: 1.8rem; margin-bottom: 15px; font-family: 'Outfit', sans-serif; font-style: normal; margin-top: 0;"><span style="color: #ffffff;">Festival</span><span style="color: #e5c158;">:</span> <span style="font-weight: 300; color: #e5c158;">To be continued…</span></h3>
+            <p style="font-size: 1.5rem; line-height: 1.7; color: #f5eed3;">
+                A cinephile's companion for tracking festival films, after the festival, in local cinemas and on online streaming platforms.
+            </p>
+        </div>
+
+        <!-- Slide 5: Under the Hood -->
+        <div class="slide" style="align-items: flex-start; justify-content: flex-start; text-align: left; padding: 55px 60px 40px 60px;">
+            <h2><span style="color: #ffffff; font-weight: 800;">Festival</span><span style="color: #e5c158; font-weight: 300;">:tbc</span> - under the hood</h2>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 5px;">
+                <p style="font-size: 1.25rem; margin-bottom: 0;">🔧 <strong>Structure:</strong> FastAPI backend, SQLite, and concurrent multi-thread web crawlers.</p>
+                <p style="font-size: 1.25rem; margin-bottom: 0;">📐 <strong>Domain-Driven Design:</strong> Decoupled aggregates (Film, FilmSelection, Festival, Category, Venue) for boundary separation & crossover logic.</p>
+                <p style="font-size: 1.25rem; margin-bottom: 0;">🤖 <strong>The Role of AI:</strong> Integrated Gemini for semantic matching of film names across multi-language catalogs.</p>
+            </div>
+        </div>
+
+        <!-- Slide 6: Cinema Arta Screen simulation & Demo Launch -->
+        <div class="slide" style="align-items: center; text-align: center; padding: 60px 60px 30px 60px; justify-content: flex-start;">
+            <div class="cinema-screen-container" style="margin-bottom: 12px;">
+                <img src="https://cdn.prod.website-files.com/5f1aacf7576ab96e1d81e6bd/63519900c4b05da9547808eb_arta%202.jpeg" class="cinema-img" alt="Cinema Arta">
+                <div class="screen-overlay" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+                    <img src="images/tiff-logo-clean.svg" style="height: 18px; width: auto;" alt="TIFF Logo">
+                    <p style="font-family:'Outfit', sans-serif; font-weight:800; font-size:1.0rem; color:#f3f4f6; margin: 0; line-height: 1.1;">
+                        Festival<span style="color:#fbbf24; font-weight:300;">:tbc</span>
+                    </p>
+                </div>
+            </div>
+            <p style="font-size: 1.1rem; color: #a8a088; font-style: italic; margin-bottom: 12px; margin-top: 0;">Cinema Arta (Cluj-Napoca, Romania)</p>
+            <a href="index.html" target="_blank" class="btn-launch" style="padding: 8px 16px; font-size: 1.1rem; margin-top: 5px;">Launch Live Dashboard 🎬</a>
+        </div>
+    </div>
+
+    <!-- Controls Overlay -->
+    <div class="controls-overlay">
+        <div class="slide-dots" id="dots-wrapper">
+            <!-- Dots injected by script -->
+        </div>
+        <div class="navigation-keys">
+            <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">◀</button>
+            <button class="nav-btn" id="next-btn" onclick="navigate(1)">▶</button>
+        </div>
+        <div class="helper-text">Use arrow keys or click dots to navigate</div>
+    </div>
+
+    <script>
+        let currentIndex = 0;
+        const slides = document.querySelectorAll('.slide');
+        const dotsWrapper = document.getElementById('dots-wrapper');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const deckContainer = document.getElementById('deck-container');
+
+        // Initialize Dots
+        slides.forEach((_, idx) => {
+            const dot = document.createElement('div');
+            dot.className = `dot ${idx === 0 ? 'active' : ''}`;
+            dot.addEventListener('click', () => showSlide(idx));
+            dotsWrapper.appendChild(dot);
+        });
+
+        const dots = document.querySelectorAll('.dot');
+
+        function showSlide(index) {
+            if (index < 0 || index >= slides.length) return;
+
+            deckContainer.style.opacity = 0;
+            deckContainer.style.transform = 'scale(0.98)';
+
+            setTimeout(() => {
+                slides[currentIndex].classList.remove('active');
+                dots[currentIndex].classList.remove('active');
+
+                currentIndex = index;
+
+                slides[currentIndex].classList.add('active');
+                dots[currentIndex].classList.add('active');
+
+                prevBtn.disabled = currentIndex === 0;
+                nextBtn.disabled = currentIndex === slides.length - 1;
+
+                deckContainer.style.opacity = 1;
+                deckContainer.style.transform = 'scale(1)';
+            }, 300);
+        }
+
+        function navigate(direction) {
+            showSlide(currentIndex + direction);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                navigate(1);
+            } else if (e.key === 'ArrowLeft') {
+                navigate(-1);
+            }
+        });
+
+        prevBtn.disabled = true;
+    </script>
+</body>
+
+</html>

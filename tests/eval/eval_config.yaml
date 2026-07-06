@@ -1,0 +1,69 @@
+metrics_to_run:
+  - custom_response_quality
+  - agent_turn_count
+
+custom_metrics:
+  - name: custom_response_quality
+    custom_function: |
+      def evaluate(instance):
+          import os
+          import json
+          from dotenv import load_dotenv
+          from google import genai
+          from google.genai import types
+
+          load_dotenv()  # Load env vars from .env file in the project root
+
+          # Initialize the Google GenAI client with AI Studio (v1) endpoint
+          api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+          client = genai.Client(api_key=api_key)
+          
+          # Extract prompt and response content
+          prompt = instance.get("prompt", {}).get("parts", [{}])[0].get("text", "")
+          response_obj = instance.get("response") or {}
+          parts = response_obj.get("parts", [])
+          response_text = ""
+          for p in parts:
+              if "text" in p:
+                  response_text += p["text"]
+
+          judge_prompt = f"""
+          Evaluate the AI assistant's response to the user prompt.
+          
+          User Prompt: {prompt}
+          Final Response: {response_text}
+          
+          Grade the response quality on a scale of 1 to 5:
+          1 (Poor): The response fails to address the query.
+          2 (Below Average): Notable gaps or incorrect information.
+          3 (Acceptable): Adequately answers but lacks depth.
+          4 (Good): Accurate, well-structured, and helpful.
+          5 (Excellent): Perfect, clear, and comprehensive.
+          
+          Return your evaluation as a valid JSON object matching this structure:
+          {{
+            "score": <integer between 1 and 5>,
+            "explanation": "<detailed string explaining the rationale>"
+          }}
+          """
+          try:
+              # Use the default model for evaluation
+              res = client.models.generate_content(
+                  model="gemini-2.5-flash",
+                  contents=judge_prompt,
+                  config=types.GenerateContentConfig(
+                      response_mime_type="application/json"
+                  )
+              )
+              data = json.loads(res.text)
+              return {
+                  'score': int(data.get("score", 3)),
+                  'explanation': data.get("explanation", "")
+              }
+          except Exception as e:
+              return {'score': 1, 'explanation': f"Evaluator Error: {e}"}
+  - name: agent_turn_count
+    custom_function: |
+      def evaluate(instance):
+          turns = (instance.get("agent_data") or {}).get("turns", [])
+          return {'score': len(turns)}
