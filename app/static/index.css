@@ -511,9 +511,11 @@ body {
     text-decoration: none;
     padding: 8px;
     border-radius: 6px;
+    font-family: inherit;
     font-size: 12px;
     font-weight: 600;
     border: 1px solid var(--panel-border);
+    cursor: pointer;
     transition: var(--transition-smooth);
     display: flex;
     align-items: center;
@@ -544,6 +546,17 @@ body {
 
 .btn-card-link.btn-track:hover {
     background: rgba(79, 70, 229, 0.25);
+}
+
+.btn-card-link.btn-stream {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.btn-card-link.btn-stream:hover {
+    background: rgba(16, 185, 129, 0.25);
+    color: #10b981;
 }
 
 /* Empty/Loading States */
@@ -926,6 +939,12 @@ body {
     border-radius: 12px;
 }
 
+.matches-layout-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
 @media (max-width: 992px) {
     .matches-layout-wrapper {
         grid-template-columns: 1fr !important;
@@ -1078,4 +1097,51 @@ body {
 .slide-dot.active {
     background: #e5c158;
     transform: scale(1.2);
+}
+
+/* Reconstructed Dashboard Components */
+.btn,
+.clickable-festival-badge {
+    font-family: inherit;
+}
+
+.nav-badge {
+    margin-left: auto;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    min-width: 22px;
+    text-align: center;
+}
+
+.episode-card-btn {
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+.catalog-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 30px;
+    align-items: center;
+}
+
+#filter-btn-awards.btn-secondary {
+    background: transparent;
+    color: #f5c518;
+    border: 1px solid #f5c518;
+}
+
+#filter-btn-awards.btn-primary {
+    background: #f5c518;
+    color: #121212;
+    border: 1px solid #f5c518;
+    box-shadow: 0 4px 15px rgba(245, 197, 24, 0.25);
 }

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Festival:tbc — Film Festival Tracker</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Dashboard Styles & Script -->
+    <link rel="stylesheet" href="index.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <div class="glass-bg"></div>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-film logo-icon" aria-hidden="true"></i>
+                <h1>Festival<span>:tbc</span></h1>
+            </div>
+
+            <nav class="navigation" aria-label="Primary">
+                <a href="#dashboard" id="nav-dashboard" class="nav-item active">
+                    <i class="fa-solid fa-compass" aria-hidden="true"></i>
+                    <span>Overview</span>
+                </a>
+                <a href="#catalog" id="nav-catalog" class="nav-item">
+                    <i class="fa-solid fa-clapperboard" aria-hidden="true"></i>
+                    <span>Film Catalog</span>
+                </a>
+                <a href="#across-festivals" id="nav-across-festivals" class="nav-item">
+                    <i class="fa-solid fa-circle-nodes" aria-hidden="true"></i>
+                    <span>Across Festivals</span>
+                </a>
+                <a href="#watchlist" id="nav-watchlist" class="nav-item">
+                    <i class="fa-solid fa-bookmark" aria-hidden="true"></i>
+                    <span>My Watchlist</span>
+                    <span id="watchlist-count" class="nav-badge">0</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-episodes">
+                <div class="episodes-header">Tracked Festivals</div>
+
+                <button type="button" class="episode-card episode-card-btn" data-action="select-festival" data-festival="TIFF">
+                    <span class="episode-header-row">
+                        <span class="episode-number">Episode 01</span>
+                        <span class="episode-badge tiff">TIFF.25</span>
+                    </span>
+                    <span class="episode-subtitle">
+                        <i class="fa-solid fa-location-dot" aria-hidden="true"></i> Cluj-Napoca
+                    </span>
+                </button>
+
+                <button type="button" class="episode-card episode-card-btn" data-action="select-festival" data-festival="Cannes">
+                    <span class="episode-header-row">
+                        <span class="episode-number">Episode 02</span>
+                        <span class="episode-badge cannes">Cannes</span>
+                    </span>
+                    <span class="episode-subtitle">
+                        <i class="fa-solid fa-award" aria-hidden="true"></i> Official Selection
+                    </span>
+                </button>
+
+                <button type="button" class="episode-card episode-card-btn" data-action="select-festival" data-festival="Berlinale">
+                    <span class="episode-header-row">
+                        <span class="episode-number">Episode 03</span>
+                        <span class="episode-badge berlinale">Berlinale</span>
+                    </span>
+                    <span class="episode-subtitle">
+                        <i class="fa-solid fa-trophy" aria-hidden="true"></i> 76th Edition
+                    </span>
+                </button>
+            </div>
+
+            <div class="user-profile">
+                <div class="avatar" aria-hidden="true">
+                    <i class="fa-solid fa-ticket"></i>
+                </div>
+                <div>
+                    <p class="name">Cluj Cinephile</p>
+                    <p class="role"><a href="presentation-modern.html" class="card-link">View Presentation</a></p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <div class="main-content">
+            <header class="main-header">
+                <search class="search-bar-container">
+                    <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
+                    <input type="search" id="catalog-search-input" placeholder="Search films, directors, sections..." aria-label="Search film catalog">
+                </search>
+
+                <button type="button" id="btn-global-sync" class="btn btn-primary">
+                    <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+                    <span>Sync Schedules</span>
+                </button>
+            </header>
+
+            <main>
+                <!-- View 1: Overview Dashboard -->
+                <section id="view-dashboard" class="view-section">
+                    <div class="view-header-title">
+                        <h2>To Be Continued...</h2>
+                        <p>Track when and where your missed festival films play again in Cluj-Napoca cinemas and on streaming.</p>
+                    </div>
+
+                    <div class="matches-layout-wrapper">
+                        <div class="section-container">
+                            <div class="section-title">
+                                <h3><i class="fa-solid fa-ticket" aria-hidden="true"></i> Cinema Screenings</h3>
+                                <span id="sync-status" class="refresh-time">Last synced: recently</span>
+                            </div>
+                            <div id="matches-container" class="matches-grid"></div>
+                        </div>
+
+                        <div class="section-container">
+                            <div class="section-title">
+                                <h3><i class="fa-solid fa-tv" aria-hidden="true"></i> Streaming Platforms</h3>
+                                <span id="streaming-sync-status" class="refresh-time">Last synced: recently</span>
+                            </div>
+                            <div id="streaming-matches-container" class="matches-grid"></div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-columns">
+                        <div class="column-card glass-panel">
+                            <div class="card-header">
+                                <h3>My Watchlist</h3>
+                                <a href="#watchlist" class="card-link" data-action="switch-view" data-view="watchlist">Manage All</a>
+                            </div>
+                            <ul id="watchlist-summary-container" class="summary-list"></ul>
+                        </div>
+
+                        <div class="column-card glass-panel">
+                            <div class="card-header">
+                                <h3>Monitored Cluj Cinemas</h3>
+                            </div>
+                            <div class="cinemas-list">
+                                <div class="cinema-item">
+                                    <div>
+                                        <h4>Cinema Victoria</h4>
+                                        <p>Art-house &amp; TIFF hub · Bd. Eroilor 51</p>
+                                    </div>
+                                    <a href="https://www.cinemavictoria.ro/program/" target="_blank" rel="noopener noreferrer" class="cinema-link" aria-label="Open Cinema Victoria program">
+                                        <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                                    </a>
+                                </div>
+
+                                <div class="cinema-item">
+                                    <div>
+                                        <h4>Cinema Arta</h4>
+                                        <p>Historic independent cinema · Str. Universității 3</p>
+                                    </div>
+                                    <a href="https://www.cinema-arta.ro/program" target="_blank" rel="noopener noreferrer" class="cinema-link" aria-label="Open Cinema Arta program">
+                                        <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                                    </a>
+                                </div>
+
+                                <div class="cinema-item">
+                                    <div>
+                                        <h4>Cinema Florin Piersic</h4>
+                                        <p>Landmark festival venue · Piața Mihai Viteazul 11</p>
+                                    </div>
+                                    <a href="https://www.cinemagia.ro/program-cinema/florin-piersic-cluj/" target="_blank" rel="noopener noreferrer" class="cinema-link" aria-label="Open Cinema Florin Piersic program">
+                                        <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- View 2: Film Catalog -->
+                <section id="view-catalog" class="view-section d-none">
+                    <div class="view-header-title">
+                        <h2>Festival Film Catalog</h2>
+                        <p>Browse official selections and award winners across TIFF, Cannes, and Berlinale.</p>
+                    </div>
+
+                    <div class="catalog-filter-bar" role="group" aria-label="Filter catalog by festival">
+                        <button type="button" id="filter-btn-all" class="btn btn-primary" data-action="filter-catalog" data-festival="all">All Festivals</button>
+                        <button type="button" id="filter-btn-tiff" class="btn btn-secondary" data-action="filter-catalog" data-festival="tiff">TIFF</button>
+                        <button type="button" id="filter-btn-cannes" class="btn btn-secondary" data-action="filter-catalog" data-festival="cannes">Cannes</button>
+                        <button type="button" id="filter-btn-berlinale" class="btn btn-secondary" data-action="filter-catalog" data-festival="berlinale">Berlinale</button>
+                        <button type="button" id="filter-btn-awards" class="btn btn-secondary" data-action="filter-catalog" data-festival="awards">
+                            <i class="fa-solid fa-trophy" aria-hidden="true"></i> Award Winners
+                        </button>
+                    </div>
+
+                    <div id="catalog-container"></div>
+                </section>
+
+                <!-- View 3: Across Festivals -->
+                <section id="view-across-festivals" class="view-section d-none">
+                    <div class="view-header-title">
+                        <h2>Across Festivals</h2>
+                        <p>Crossover films selected across multiple international festivals (TIFF, Cannes, and Berlinale).</p>
+                    </div>
+
+                    <div id="across-festivals-container" class="matches-grid"></div>
+                </section>
+
+                <!-- View 4: My Watchlist -->
+                <section id="view-watchlist" class="view-section d-none">
+                    <div class="view-header-title">
+                        <h2 id="watchlist-heading">My Watchlist</h2>
+                        <p>Add missed festival films to track local Cluj screenings and streaming releases.</p>
+                    </div>
+
+                    <div class="watchlist-section glass-panel">
+                        <div class="watchlist-input-bar">
+                            <input type="text" id="custom-movie-input" placeholder="Enter film title (e.g. Kontinental '25)..." aria-label="Film title">
+                            <input type="text" id="custom-director-input" placeholder="Director (optional)" aria-label="Director (optional)">
+                            <button type="button" id="btn-add-custom" class="btn btn-primary">
+                                <i class="fa-solid fa-plus" aria-hidden="true"></i> Add Film
+                            </button>
+                        </div>
+
+                        <div class="watchlist-table-container" tabindex="0" role="region" aria-labelledby="watchlist-heading">
+                            <table class="watchlist-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Film Title</th>
+                                        <th scope="col">Director</th>
+                                        <th scope="col">Date Added</th>
+                                        <th scope="col">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="watchlist-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+</body>
+</html>

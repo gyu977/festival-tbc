@@ -11,8 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
 import json
+import logging
+import os
 import threading
 from typing import Dict, Any, Optional
 
@@ -25,9 +26,19 @@ from app.app_utils.telemetry import setup_telemetry
 from app.app_utils.typing import Feedback
 
 setup_telemetry()
-_, project_id = google.auth.default()
-logging_client = google_cloud_logging.Client()
-logger = logging_client.logger(__name__)
+logger = None
+otel_to_cloud = False
+try:
+    _, project_id = google.auth.default()
+    if project_id:
+        logging_client = google_cloud_logging.Client(project=project_id)
+        logger = logging_client.logger(__name__)
+        otel_to_cloud = True
+except Exception as exc:
+    logging.warning(
+        "GCP credentials unavailable; falling back to local logging/telemetry: %s",
+        exc,
+    )
 allow_origins = (
     os.getenv("ALLOW_ORIGINS", "").split(",") if os.getenv("ALLOW_ORIGINS") else None
 )
@@ -47,7 +58,7 @@ app: FastAPI = get_fast_api_app(
     artifact_service_uri=artifact_service_uri,
     allow_origins=allow_origins,
     session_service_uri=session_service_uri,
-    otel_to_cloud=True,
+    otel_to_cloud=otel_to_cloud,
 )
 app.title = "festival-tbc"
 app.description = "API for interacting with the Agent festival-tbc"
@@ -63,7 +74,10 @@ def collect_feedback(feedback: Feedback) -> dict[str, str]:
     Returns:
         Success message
     """
-    logger.log_struct(feedback.model_dump(), severity="INFO")
+    if logger is not None:
+        logger.log_struct(feedback.model_dump(), severity="INFO")
+    else:
+        logging.info("Feedback received: %s", feedback.model_dump())
     return {"status": "success"}
 
 

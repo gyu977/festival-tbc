@@ -48,11 +48,11 @@ function setupNavigation() {
     }
 }
 
-function switchView(viewName) {
+function setActiveViewState(viewName) {
     state.currentView = viewName;
     const hash = viewName === 'acrossFestivals' ? 'across-festivals' : viewName;
     window.location.hash = hash;
-    
+
     // Toggle active classes on Nav Items
     Object.keys(navItems).forEach(name => {
         if (name === viewName) {
@@ -61,7 +61,7 @@ function switchView(viewName) {
             navItems[name].classList.remove('active');
         }
     });
-    
+
     // Toggle d-none classes on Sections
     Object.keys(views).forEach(name => {
         if (name === viewName) {
@@ -70,7 +70,11 @@ function switchView(viewName) {
             views[name].classList.add('d-none');
         }
     });
-    
+}
+
+function switchView(viewName) {
+    setActiveViewState(viewName);
+
     // Trigger view-specific loads
     if (viewName === 'catalog') {
         loadCatalog();
@@ -88,18 +92,50 @@ function setupEventListeners() {
     if (btnAddCustom) {
         btnAddCustom.addEventListener('click', handleAddCustomMovie);
     }
-    
+
+    ['custom-movie-input', 'custom-director-input'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddCustomMovie();
+                }
+            });
+        }
+    });
+
     // Global sync button
     const btnGlobalSync = document.getElementById('btn-global-sync');
     if (btnGlobalSync) {
         btnGlobalSync.addEventListener('click', handleSyncSchedules);
     }
-    
+
     // Search input
     const searchInput = document.getElementById('catalog-search-input');
     if (searchInput) {
         searchInput.addEventListener('input', handleCatalogSearch);
     }
+
+    // Delegated click handlers for dynamic and static action controls
+    document.addEventListener('click', (e) => {
+        const el = e.target.closest('[data-action]');
+        if (!el) return;
+
+        const action = el.dataset.action;
+        if (action === 'add-watchlist') {
+            addMovieToWatchlist(el.dataset.title, el.dataset.director || null);
+        } else if (action === 'delete-watchlist') {
+            deleteMovieFromWatchlist(el.dataset.title);
+        } else if (action === 'select-festival') {
+            selectFestivalInCatalog(el.dataset.festival);
+        } else if (action === 'filter-catalog') {
+            filterCatalog(el.dataset.festival);
+        } else if (action === 'switch-view') {
+            e.preventDefault();
+            switchView(el.dataset.view);
+        }
+    });
 }
 
 // Load Initial Data from REST API
@@ -243,34 +279,16 @@ async function loadCatalog() {
 
 function filterCatalog(festival) {
     state.activeFestivalFilter = festival;
-    
+
     // Update button styles
     const filters = ['all', 'tiff', 'cannes', 'berlinale', 'awards'];
     filters.forEach(f => {
         const btn = document.getElementById(`filter-btn-${f}`);
         if (btn) {
-            if (f.toLowerCase() === festival.toLowerCase()) {
-                btn.className = 'btn btn-primary';
-                if (f === 'awards') {
-                    btn.style.color = '#121212';
-                    btn.style.backgroundColor = '#f5c518';
-                    btn.style.borderColor = '#f5c518';
-                }
-            } else {
-                btn.className = 'btn btn-secondary';
-                if (f === 'awards') {
-                    btn.style.color = '#f5c518';
-                    btn.style.backgroundColor = 'transparent';
-                    btn.style.borderColor = '#f5c518';
-                } else {
-                    btn.style.color = '';
-                    btn.style.backgroundColor = '';
-                    btn.style.borderColor = '';
-                }
-            }
+            btn.className = f.toLowerCase() === festival.toLowerCase() ? 'btn btn-primary' : 'btn btn-secondary';
         }
     });
-    
+
     loadCatalog();
 }
 
@@ -319,61 +337,62 @@ function renderAcrossFestivals(films) {
     
     container.innerHTML = films.map(film => {
         const isTracked = state.watchlist.some(w => w.title.toLowerCase() === film.title.toLowerCase());
-        const trackBtn = isTracked 
-            ? `<button class="btn-card-link" disabled style="opacity: 0.6; cursor: not-allowed; background: rgba(255, 255, 255, 0.02); border-color: rgba(255, 255, 255, 0.05); color: var(--text-muted);"><i class="fa-solid fa-check"></i> Tracked</button>`
-            : `<button class="btn-card-link btn-track" onclick="addMovieToWatchlist('${escapeHtml(film.title)}', '${escapeHtml(film.director)}')"><i class="fa-solid fa-plus"></i> Track</button>`;
-            
+        const trackBtn = isTracked
+            ? `<button type="button" class="btn-card-link" disabled style="opacity: 0.6; cursor: not-allowed; background: rgba(255, 255, 255, 0.02); border-color: rgba(255, 255, 255, 0.05); color: var(--text-muted);"><i class="fa-solid fa-check" aria-hidden="true"></i> Tracked</button>`
+            : `<button type="button" class="btn-card-link btn-track" data-action="add-watchlist" data-title="${escapeHtml(film.title)}" data-director="${escapeHtml(film.director || '')}"><i class="fa-solid fa-plus" aria-hidden="true"></i> Track</button>`;
+
         const festivalBadges = film.festivals.map(f => {
             if (f === 'TIFF') {
                 return `
-                    <span class="badge badge-tiff clickable-festival-badge" onclick="selectFestivalInCatalog('TIFF')" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); padding: 4px 8px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; height: 22px;">
+                    <button type="button" class="badge badge-tiff clickable-festival-badge" data-action="select-festival" data-festival="TIFF" aria-label="Filter catalog by TIFF" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); padding: 4px 8px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; height: 22px;">
                         <img src="images/tiff-logo.svg" style="height: 9px; width: auto;" alt="TIFF">
-                    </span>
+                    </button>
                 `;
             } else if (f === 'Cannes') {
                 return `
-                    <span class="badge badge-cannes clickable-festival-badge" onclick="selectFestivalInCatalog('Cannes')" style="background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.25); padding: 4px 8px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; height: 22px;">
+                    <button type="button" class="badge badge-cannes clickable-festival-badge" data-action="select-festival" data-festival="Cannes" aria-label="Filter catalog by Cannes" style="background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.25); padding: 4px 8px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; height: 22px;">
                         <img src="images/cannes-logo.svg" style="height: 11px; width: auto;" alt="Cannes">
-                    </span>
+                    </button>
                 `;
             } else if (f === 'Berlinale') {
                 return `
-                    <span class="badge badge-berlinale clickable-festival-badge" onclick="selectFestivalInCatalog('Berlinale')" style="background: rgba(227, 6, 19, 0.12); border: 1px solid rgba(227, 6, 19, 0.25); padding: 4px 8px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; height: 22px;">
+                    <button type="button" class="badge badge-berlinale clickable-festival-badge" data-action="select-festival" data-festival="Berlinale" aria-label="Filter catalog by Berlinale" style="background: rgba(227, 6, 19, 0.12); border: 1px solid rgba(227, 6, 19, 0.25); padding: 4px 8px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; height: 22px;">
                         <img src="images/berlinale-logo.svg" style="height: 10px; width: auto;" alt="Berlinale">
-                    </span>
+                    </button>
                 `;
             }
-            return `<span class="badge clickable-festival-badge" onclick="selectFestivalInCatalog('${f}')" style="background: rgba(255, 255, 255, 0.05); color: var(--text-muted); font-size: 11px; padding: 2px 6px; border-radius: 4px;">${f}</span>`;
+            const safeFest = escapeHtml(f);
+            return `<button type="button" class="badge clickable-festival-badge" data-action="select-festival" data-festival="${safeFest}" aria-label="Filter catalog by ${safeFest}" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-muted); font-size: 11px; padding: 2px 6px; border-radius: 4px;">${safeFest}</button>`;
         }).join('');
-        
+
         let awardBadgeHtml = '';
         if (film.awards && film.awards.length > 0) {
             film.awards.forEach(award => {
                 awardBadgeHtml += `
                     <div class="award-badge" style="background: linear-gradient(135deg, rgba(245, 197, 24, 0.15) 0%, rgba(217, 119, 6, 0.15) 100%); border: 1px solid rgba(245, 197, 24, 0.3); color: #f5c518; font-size: 0.7rem; font-weight: 600; padding: 3px 8px; border-radius: 5px; display: inline-flex; align-items: center; gap: 5px; margin-bottom: 10px; width: fit-content; text-transform: uppercase; letter-spacing: 0.5px;">
-                        <i class="fa-solid fa-trophy"></i> ${award}
+                        <i class="fa-solid fa-trophy" aria-hidden="true"></i> ${escapeHtml(award)}
                     </div>
                 `;
             });
         }
-        
+
         return `
             <div class="match-card glass-panel" style="margin-bottom: 0;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 15px;">
-                    <h4 style="margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3; max-width: 65%; color: #f3f4f6;">${film.title}</h4>
+                    <h4 style="margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3; max-width: 65%; color: #f3f4f6;">${escapeHtml(film.title)}</h4>
                     <div style="display: flex; gap: 6px; flex-shrink: 0; align-items: center;">
                         ${festivalBadges}
                     </div>
                 </div>
                 ${awardBadgeHtml}
-                <p class="director" style="margin-bottom: 2px;">Directed by ${film.director || 'Unknown'}</p>
-                <p class="director" style="margin-bottom: 12px;">Country: ${film.country || 'Unknown'}</p>
-                
-                <p class="director" style="font-size: 12px; line-height: 1.5; color: var(--text-muted); margin-bottom: 18px; flex-grow: 1; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">${film.description}</p>
-                
+                <p class="director" style="margin-bottom: 2px;">Directed by ${escapeHtml(film.director || 'Unknown')}</p>
+                <p class="director" style="margin-bottom: 12px;">Country: ${escapeHtml(film.country || 'Unknown')}</p>
+
+                <p class="director" style="font-size: 12px; line-height: 1.5; color: var(--text-muted); margin-bottom: 18px; flex-grow: 1; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">${escapeHtml(film.description)}</p>
+
                 <div class="card-footer">
-                    <a href="https://www.imdb.com/find?q=${encodeURIComponent(film.title)}" target="_blank" class="btn-card-link">
-                        <i class="fa-brands fa-imdb" style="color: #f5c518;"></i> IMDb
+                    <a href="https://www.imdb.com/find?q=${encodeURIComponent(film.title)}" target="_blank" rel="noopener noreferrer" class="btn-card-link">
+                        <i class="fa-brands fa-imdb" style="color: #f5c518;" aria-hidden="true"></i> IMDb
                     </a>
                     ${trackBtn}
                 </div>
@@ -477,17 +496,20 @@ async function handleSyncSchedules() {
 // Search filtering logic
 function handleCatalogSearch(e) {
     const query = e.target.value.toLowerCase().trim();
+    if (query && state.currentView !== 'catalog') {
+        setActiveViewState('catalog');
+    }
     if (!query) {
         renderCatalog(state.tiffFilms);
         return;
     }
-    
+
     const filtered = state.tiffFilms.filter(film => {
         return (film.title && film.title.toLowerCase().includes(query)) ||
                (film.director && film.director.toLowerCase().includes(query)) ||
                (film.category && film.category.toLowerCase().includes(query));
     });
-    
+
     renderCatalog(filtered);
 }
 
@@ -495,7 +517,7 @@ function handleCatalogSearch(e) {
 function renderWatchlist() {
     const tableBody = document.getElementById('watchlist-table-body');
     const summaryContainer = document.getElementById('watchlist-summary-container');
-    
+
     // Render Watchlist Table
     if (tableBody) {
         if (state.watchlist.length === 0) {
@@ -506,16 +528,17 @@ function renderWatchlist() {
             `;
         } else {
             tableBody.innerHTML = state.watchlist.map(item => {
-                const dateStr = item.added_at || 'Recently';
-                const directorStr = item.director ? item.director : '<span class="text-muted">Not specified</span>';
+                const safeTitle = escapeHtml(item.title);
+                const dateStr = escapeHtml(item.added_at || 'Recently');
+                const directorStr = item.director ? escapeHtml(item.director) : '<span class="text-muted">Not specified</span>';
                 return `
                     <tr>
-                        <td><span class="movie-title">${item.title}</span></td>
+                        <td><span class="movie-title">${safeTitle}</span></td>
                         <td><span class="movie-dir">${directorStr}</span></td>
                         <td>${dateStr}</td>
                         <td>
-                            <button class="btn-icon-delete" onclick="deleteMovieFromWatchlist('${escapeHtml(item.title)}')">
-                                <i class="fa-solid fa-trash-can"></i>
+                            <button type="button" class="btn-icon-delete" data-action="delete-watchlist" data-title="${safeTitle}" aria-label="Remove ${safeTitle} from watchlist">
+                                <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
                             </button>
                         </td>
                     </tr>
@@ -523,28 +546,31 @@ function renderWatchlist() {
             }).join('');
         }
     }
-    
+
     // Render Sidebar/Dashboard Watchlist Summary
     if (summaryContainer) {
         if (state.watchlist.length === 0) {
             summaryContainer.innerHTML = `<li class="empty-text">No movies in watchlist yet.</li>`;
         } else {
-            summaryContainer.innerHTML = state.watchlist.slice(0, 5).map(item => `
+            summaryContainer.innerHTML = state.watchlist.slice(0, 5).map(item => {
+                const safeTitle = escapeHtml(item.title);
+                return `
                 <li>
                     <div>
-                        <p class="title">${item.title}</p>
-                        <p class="director">${item.director || 'Unknown Director'}</p>
+                        <p class="title">${safeTitle}</p>
+                        <p class="director">${escapeHtml(item.director || 'Unknown Director')}</p>
                     </div>
-                    <button class="btn-icon-delete btn-sm" style="padding:4px 8px; font-size:10px;" onclick="deleteMovieFromWatchlist('${escapeHtml(item.title)}')">
-                        <i class="fa-solid fa-xmark"></i>
+                    <button type="button" class="btn-icon-delete btn-sm" style="padding:4px 8px; font-size:10px;" data-action="delete-watchlist" data-title="${safeTitle}" aria-label="Remove ${safeTitle} from watchlist">
+                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                     </button>
                 </li>
-            `).join('');
-            
+            `;
+            }).join('');
+
             if (state.watchlist.length > 5) {
                 summaryContainer.innerHTML += `
                     <li class="empty-text">
-                        <a href="#watchlist" class="card-link" onclick="switchView('watchlist')">And ${state.watchlist.length - 5} more...</a>
+                        <a href="#watchlist" class="card-link" data-action="switch-view" data-view="watchlist">And ${state.watchlist.length - 5} more...</a>
                     </li>
                 `;
             }
@@ -638,29 +664,29 @@ function renderCatalog(films) {
             const film = item.film;
             const sel = item.selection;
             const isAdded = state.watchlist.some(w => w.title.toLowerCase() === film.title.toLowerCase());
-            const actionButton = isAdded 
-                ? `<button class="btn-card-link" disabled style="opacity: 0.6; cursor: not-allowed; background: rgba(255, 255, 255, 0.02); border-color: rgba(255, 255, 255, 0.05); color: var(--text-muted);"><i class="fa-solid fa-check"></i> Added</button>`
-                : `<button class="btn-card-link btn-track" onclick="addMovieToWatchlist('${escapeHtml(film.title)}', '${escapeHtml(film.director)}')"><i class="fa-solid fa-plus"></i> Track</button>`;
-                
+            const actionButton = isAdded
+                ? `<button type="button" class="btn-card-link" disabled style="opacity: 0.6; cursor: not-allowed; background: rgba(255, 255, 255, 0.02); border-color: rgba(255, 255, 255, 0.05); color: var(--text-muted);"><i class="fa-solid fa-check" aria-hidden="true"></i> Added</button>`
+                : `<button type="button" class="btn-card-link btn-track" data-action="add-watchlist" data-title="${escapeHtml(film.title)}" data-director="${escapeHtml(film.director || '')}"><i class="fa-solid fa-plus" aria-hidden="true"></i> Track</button>`;
+
             const cardFestivalBadges = Array.isArray(film.festivals)
                 ? film.festivals.map(f => {
                     if (f === 'TIFF') {
                         return `
-                            <span class="badge badge-tiff clickable-festival-badge" onclick="selectFestivalInCatalog('TIFF')" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); padding: 2px 6px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; height: 16px; margin-left: 4px;">
+                            <button type="button" class="badge badge-tiff clickable-festival-badge" data-action="select-festival" data-festival="TIFF" aria-label="Filter catalog by TIFF" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); padding: 2px 6px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; height: 16px; margin-left: 4px;">
                                 <img src="images/tiff-logo.svg" style="height: 7px; width: auto;" alt="TIFF">
-                            </span>
+                            </button>
                         `;
                     } else if (f === 'Cannes') {
                         return `
-                            <span class="badge badge-cannes clickable-festival-badge" onclick="selectFestivalInCatalog('Cannes')" style="background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.25); padding: 2px 6px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; height: 16px; margin-left: 4px;">
+                            <button type="button" class="badge badge-cannes clickable-festival-badge" data-action="select-festival" data-festival="Cannes" aria-label="Filter catalog by Cannes" style="background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.25); padding: 2px 6px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; height: 16px; margin-left: 4px;">
                                 <img src="images/cannes-logo.svg" style="height: 9px; width: auto;" alt="Cannes">
-                            </span>
+                            </button>
                         `;
                     } else if (f === 'Berlinale') {
                         return `
-                            <span class="badge badge-berlinale clickable-festival-badge" onclick="selectFestivalInCatalog('Berlinale')" style="background: rgba(227, 6, 19, 0.12); border: 1px solid rgba(227, 6, 19, 0.25); padding: 2px 6px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; height: 16px; margin-left: 4px;">
+                            <button type="button" class="badge badge-berlinale clickable-festival-badge" data-action="select-festival" data-festival="Berlinale" aria-label="Filter catalog by Berlinale" style="background: rgba(227, 6, 19, 0.12); border: 1px solid rgba(227, 6, 19, 0.25); padding: 2px 6px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; height: 16px; margin-left: 4px;">
                                 <img src="images/berlinale-logo.svg" style="height: 8px; width: auto;" alt="Berlinale">
-                            </span>
+                            </button>
                         `;
                     }
                     return '';
@@ -671,42 +697,42 @@ function renderCatalog(films) {
             if (sel.award) {
                 awardBadgeHtml = `
                     <div class="award-badge" style="background: linear-gradient(135deg, rgba(245, 197, 24, 0.15) 0%, rgba(217, 119, 6, 0.15) 100%); border: 1px solid rgba(245, 197, 24, 0.3); color: #f5c518; font-size: 0.72rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; width: fit-content; text-transform: uppercase; letter-spacing: 0.5px;">
-                        <i class="fa-solid fa-trophy"></i> ${sel.award}
+                        <i class="fa-solid fa-trophy" aria-hidden="true"></i> ${escapeHtml(sel.award)}
                     </div>
                 `;
             }
-                
+
             return `
                 <div class="catalog-card">
                     <div style="flex-grow: 1; display: flex; flex-direction: column;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <span class="cat-badge" style="margin-bottom: 0;">${sel.category.name}</span>
+                            <span class="cat-badge" style="margin-bottom: 0;">${escapeHtml(sel.category.name)}</span>
                             <div style="display: flex; align-items: center;">
                                 ${cardFestivalBadges}
                             </div>
                         </div>
                         ${awardBadgeHtml}
-                        <h4>${film.title}</h4>
-                        <p class="movie-dir" style="margin-bottom: 2px;">Dir: ${film.director || 'Unknown'}</p>
-                        <p class="movie-dir" style="margin-bottom: 4px;">Country: ${film.country && film.country !== 'Unknown' ? film.country : 'Unknown'}</p>
+                        <h4>${escapeHtml(film.title)}</h4>
+                        <p class="movie-dir" style="margin-bottom: 2px;">Dir: ${escapeHtml(film.director || 'Unknown')}</p>
+                        <p class="movie-dir" style="margin-bottom: 4px;">Country: ${escapeHtml(film.country && film.country !== 'Unknown' ? film.country : 'Unknown')}</p>
                         <p class="movie-duration" style="margin-bottom: 0; display: flex; align-items: center; gap: 6px;">
-                            <i class="fa-regular fa-clock" style="color: #818cf8;"></i> ${film.duration || '90 min'}
+                            <i class="fa-regular fa-clock" style="color: #818cf8;" aria-hidden="true"></i> ${escapeHtml(film.duration || '90 min')}
                         </p>
                     </div>
                     <div class="card-footer" style="display: flex; gap: 10px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 15px; margin-top: 15px;">
-                        <a href="https://www.imdb.com/find?q=${encodeURIComponent(film.title)}" target="_blank" class="btn-card-link">
-                            <i class="fa-brands fa-imdb" style="color: #f5c518;"></i> IMDb Details
+                        <a href="https://www.imdb.com/find?q=${encodeURIComponent(film.title)}" target="_blank" rel="noopener noreferrer" class="btn-card-link">
+                            <i class="fa-brands fa-imdb" style="color: #f5c518;" aria-hidden="true"></i> IMDb Details
                         </a>
                         ${actionButton}
                     </div>
                 </div>
             `;
         }).join('');
-        
+
         html += `
             <div class="catalog-category-section">
                 <div class="category-header">
-                    <h3 class="category-title-text">${catName}${festivalLogoHtml} <span class="category-film-count">${catFilms.length} films</span></h3>
+                    <h3 class="category-title-text">${escapeHtml(catName)}${festivalLogoHtml} <span class="category-film-count">${catFilms.length} films</span></h3>
                 </div>
                 <div class="catalog-grid">
                     ${cardsHtml}
@@ -816,44 +842,44 @@ function renderMatches() {
     } else {
         container.innerHTML = sortedCinema.map(match => {
             const imdbUrl = match.imdb_url && match.imdb_url !== 'https://www.imdb.com/' && match.imdb_url !== 'https://www.imdb.com'
-                ? match.imdb_url 
+                ? match.imdb_url
                 : `https://www.imdb.com/find?q=${encodeURIComponent(match.title)}`;
-                
+
             return `
                 <div class="match-card">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 15px;">
-                        <h4 style="margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3; max-width: 65%; color: #f3f4f6;">${match.title}</h4>
+                        <h4 style="margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3; max-width: 65%; color: #f3f4f6;">${escapeHtml(match.title)}</h4>
                         <span class="card-badge" style="position: static; margin-bottom: 0; flex-shrink: 0;">Match Found</span>
                     </div>
-                    <p class="director" style="margin-bottom: 2px;">Directed by ${match.director || 'Unknown'}</p>
-                    <p class="director" style="margin-bottom: 15px;">Country: ${match.country && match.country !== 'Unknown' ? match.country : 'Unknown'}</p>
-                    
+                    <p class="director" style="margin-bottom: 2px;">Directed by ${escapeHtml(match.director || 'Unknown')}</p>
+                    <p class="director" style="margin-bottom: 15px;">Country: ${escapeHtml(match.country && match.country !== 'Unknown' ? match.country : 'Unknown')}</p>
+
                     <div class="screening-details">
                         <div class="detail-row">
-                            <i class="fa-solid fa-building-columns"></i>
-                            <span class="cinema-name">${match.cinema}</span>
+                            <i class="fa-solid fa-building-columns" aria-hidden="true"></i>
+                            <span class="cinema-name">${escapeHtml(match.cinema)}</span>
                         </div>
                         <div class="detail-row">
-                            <i class="fa-solid fa-calendar-days"></i>
-                            <span>${match.date}</span>
+                            <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
+                            <span>${escapeHtml(match.date)}</span>
                         </div>
                         <div class="detail-row">
-                            <i class="fa-solid fa-clock"></i>
-                            <span>${match.time}</span>
+                            <i class="fa-solid fa-clock" aria-hidden="true"></i>
+                            <span>${escapeHtml(match.time)}</span>
                         </div>
                     </div>
-                    
+
                     <div class="card-footer">
-                        <a href="${imdbUrl}" target="_blank" class="btn-card-link">
-                            <i class="fa-brands fa-imdb" style="color: #f5c518;"></i> IMDb Details
+                        <a href="${safeUrl(imdbUrl)}" target="_blank" rel="noopener noreferrer" class="btn-card-link">
+                            <i class="fa-brands fa-imdb" style="color: #f5c518;" aria-hidden="true"></i> IMDb Details
                         </a>
-                        <a href="${match.link || '#'}" target="_blank" class="btn-card-link btn-ticket"><i class="fa-solid fa-ticket"></i> Cinema tickets</a>
+                        <a href="${safeUrl(match.link)}" target="_blank" rel="noopener noreferrer" class="btn-card-link btn-ticket"><i class="fa-solid fa-ticket" aria-hidden="true"></i> Cinema tickets</a>
                     </div>
                 </div>
             `;
         }).join('');
     }
-    
+
     // 2. Render Streaming matches
     if (streamingContainer) {
         if (streamingMatches.length === 0) {
@@ -867,29 +893,29 @@ function renderMatches() {
             streamingContainer.innerHTML = streamingMatches.map(match => `
                 <div class="match-card">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 15px;">
-                        <h4 style="margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3; max-width: 65%; color: #f3f4f6;">${match.title}</h4>
+                        <h4 style="margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3; max-width: 65%; color: #f3f4f6;">${escapeHtml(match.title)}</h4>
                         <span class="card-badge" style="position: static; margin-bottom: 0; flex-shrink: 0;">Streaming Available</span>
                     </div>
-                    <p class="director" style="margin-bottom: 2px;">Directed by ${match.director || 'Unknown'}</p>
-                    <p class="director" style="margin-bottom: 15px;">Country: ${match.country && match.country !== 'Unknown' ? match.country : 'Unknown'}</p>
-                    
+                    <p class="director" style="margin-bottom: 2px;">Directed by ${escapeHtml(match.director || 'Unknown')}</p>
+                    <p class="director" style="margin-bottom: 15px;">Country: ${escapeHtml(match.country && match.country !== 'Unknown' ? match.country : 'Unknown')}</p>
+
                     <div class="screening-details" style="margin-bottom: 18px;">
                         <div class="detail-row">
-                            <i class="fa-solid fa-tv" style="color: #10b981;"></i>
-                            <span class="cinema-name">${match.provider}</span>
+                            <i class="fa-solid fa-tv" style="color: #10b981;" aria-hidden="true"></i>
+                            <span class="cinema-name">${escapeHtml(match.provider)}</span>
                         </div>
                         <div class="detail-row">
-                            <i class="fa-solid fa-circle-check" style="color: #10b981;"></i>
+                            <i class="fa-solid fa-circle-check" style="color: #10b981;" aria-hidden="true"></i>
                             <span>Available to watch anytime</span>
                         </div>
                     </div>
-                    
+
                     <div class="card-footer">
-                        <a href="https://www.imdb.com/find?q=${encodeURIComponent(match.title)}" target="_blank" class="btn-card-link">
-                            <i class="fa-brands fa-imdb" style="color: #f5c518;"></i> IMDb Details
+                        <a href="https://www.imdb.com/find?q=${encodeURIComponent(match.title)}" target="_blank" rel="noopener noreferrer" class="btn-card-link">
+                            <i class="fa-brands fa-imdb" style="color: #f5c518;" aria-hidden="true"></i> IMDb Details
                         </a>
-                        <a href="${match.link}" target="_blank" class="btn-card-link" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border-color: rgba(16, 185, 129, 0.3); transition: all 0.2s;" onmouseover="this.style.background='rgba(16, 185, 129, 0.25)'" onmouseout="this.style.background='rgba(16, 185, 129, 0.15)'">
-                            <i class="fa-solid fa-circle-play"></i> Watch Now
+                        <a href="${safeUrl(match.link)}" target="_blank" rel="noopener noreferrer" class="btn-card-link btn-stream">
+                            <i class="fa-solid fa-circle-play" aria-hidden="true"></i> Watch Now
                         </a>
                     </div>
                 </div>
@@ -909,21 +935,26 @@ function updateWatchlistCounts() {
 function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) return;
-    
+
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    
+
     let iconClass = 'fa-circle-info';
     if (type === 'success') iconClass = 'fa-circle-check';
     if (type === 'error') iconClass = 'fa-triangle-exclamation';
-    
-    toast.innerHTML = `
-        <i class="fa-solid ${iconClass}"></i>
-        <p>${message}</p>
-    `;
-    
+
+    const icon = document.createElement('i');
+    icon.className = `fa-solid ${iconClass}`;
+    icon.setAttribute('aria-hidden', 'true');
+
+    const textEl = document.createElement('p');
+    textEl.textContent = message;
+
+    toast.appendChild(icon);
+    toast.appendChild(textEl);
+
     container.appendChild(toast);
-    
+
     // Auto-remove after 3 seconds
     setTimeout(() => {
         toast.style.animation = 'slideIn 0.3s reverse';
@@ -935,10 +966,20 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
+// Utility: Sanitize URL schemes before rendering href
+function safeUrl(url, fallback = '#') {
+    if (typeof url !== 'string') return fallback;
+    const trimmed = url.trim();
+    if (/^https?:\/\//i.test(trimmed)) {
+        return escapeHtml(trimmed);
+    }
+    return fallback;
+}
+
 // Utility: Escape HTML strings to prevent XSS
 function escapeHtml(str) {
-    if (!str) return '';
-    return str
+    if (str === null || str === undefined) return '';
+    return String(str)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
